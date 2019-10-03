@@ -147,7 +147,9 @@ def printClassifiedImage(labels, k, img, outdir, greyOutput):
         cv2.imwrite(outdir, labels.reshape(img.shape))
     else:
         pyplt.imsave(outdir, labels.reshape(img.shape))
-
+    with open(outdir[:-4]+"_segments.txt", "w") as f:
+        np.savetxt(f, labels.reshape(img.shape))
+    return labels
 # Call the k means algorithm for classification
 def clusterFeatureVectors(featureVectors, k):
 

@@ -13,7 +13,7 @@ from scipy import signal
 import argparse
 from scipy import ndimage
 import os
-
+import matplotlib.pyplot as plt
 # This is used by the brute force convolution of the moment mask
 def centralPixelMomentCalculation(img, row, col, W, p, q):
 
@@ -89,7 +89,7 @@ def computeMomentImageOptimized(img, W, p, q):
     # out = ndimage.convolve(img, kernel, mode='constant', cval=0.0)
     # out = cv2.normalize(out, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
     # Normalization sets the input to the active range [-2,2] this becomes [-200,200] with sigma
-    out = cv2.normalize(out, alpha=-200, beta=200, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
+    out = cv2.normalize(out, None, alpha=-200, beta=200, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
 
     return out
 
@@ -152,7 +152,7 @@ def runMoments(args):
 
     infile = args.infile
     if (not os.path.isfile(infile)):
-        print infile, ' is not a file!'
+        print(infile, ' is not a file!')
         exit(0)
 
     outfile = args.outfile
@@ -165,26 +165,33 @@ def runMoments(args):
 
     W = args.W
     if((W % 2) == 0):
-        print 'size of moments window is not odd, using next odd number'
+        print('size of moments window is not odd, using next odd number')
         W += 1
 
     L_transducerWindowSize = args.L
     if ((L_transducerWindowSize % 2) == 0):
-        print 'size of moments window is not odd, using next odd number'
+        print('size of moments window is not odd, using next odd number')
         L_transducerWindowSize += 1
 
     pqThreshold = args.pq
     spatialWeight = args.spw
     bruteForceMomentCalc = args.b
-    img = cv2.imread(infile, cv2.CV_LOAD_IMAGE_GRAYSCALE)
+    ################################
+    # input may be an image, or a txt file
+    ################################
+    if infile[-3:]!='txt':
+        img = cv2.imread(infile, 0)
+    else:
+        test = np.loadtxt(infile)
+        img = (test/test.max()*255).astype('uint8')
 
-    print "Applying moment masks, If brute force was selected please wait..."
+    print("Applying moment masks, If brute force was selected please wait...")
     momentImages = getAllMomentImages(img, W, pqThreshold, bruteForceMomentCalc)
 
     if(printIntermediateResults):
         _utils.printFeatureImages(momentImages, "filter", printlocation)
 
-    print "Applying nonlinear transduction with averaging"
+    print("Applying nonlinear transduction with averaging")
     featureImages = nonLinearTransducer(img, momentImages, L_transducerWindowSize)
 
     if(printIntermediateResults):
@@ -193,10 +200,20 @@ def runMoments(args):
     featureVectors = _utils.constructFeatureVectors(featureImages, img)
     featureVectors = _utils.normalizeData(featureVectors, True, spatialWeight=spatialWeight)
 
-    print "Clustering..."
+    print("Clustering...")
     labels = _utils.clusterFeatureVectors(featureVectors, k_clusters)
-    _utils.printClassifiedImage(labels, k_clusters, img, outfile, greyOutput)
-
+    labels = _utils.printClassifiedImage(labels, k_clusters, img, outfile, greyOutput)
+    plt.subplot(121)
+    plt.imshow(img)
+    plt.xticks([])
+    plt.yticks([])
+    plt.subplot(122)
+    plt.imshow(labels.reshape(img.shape))
+    plt.xticks([])
+    plt.yticks([])
+    plt.tight_layout()
+    plt.savefig(outfile)
+    plt.close()
 # For running the program on the command line
 def main():
 

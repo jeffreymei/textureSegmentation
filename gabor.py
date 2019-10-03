@@ -11,7 +11,7 @@ import math
 import _utils
 import argparse
 import os.path
-
+import matplotlib.pyplot as plt
 # A simple convolution function that returns the filtered images.
 def getFilterImages(filters, img):
     featureImages = []
@@ -216,11 +216,15 @@ def runGabor(args):
     sigmaWeight = args.siw
     greyOutput = args.c
     printIntermediateResults = args.i
-
-    if int(cv2.__version__[0]) >= 3:
-        img = cv2.imread(infile, 0)
+    if infile[-3:]!='txt':
+        if int(cv2.__version__[0]) >= 3:
+            img = cv2.imread(infile, 0)
+        else:
+            img = cv2.imread(infile, cv2.CV_LOAD_IMAGE_GRAYSCALE)
     else:
-        img = cv2.imread(infile, cv2.CV_LOAD_IMAGE_GRAYSCALE)
+        test = np.loadtxt(infile)
+        img = (test/test.max()*255).astype('uint8')
+
     lambdas = getLambdaValues(img)
     filters = build_filters(lambdas, k_gaborSize, gammaSigmaPsi)
 
@@ -242,9 +246,20 @@ def runGabor(args):
 
     print("Clustering...")
     labels = _utils.clusterFeatureVectors(featureVectors, k_clusters)
-    _utils.printClassifiedImage(labels, k_clusters, img, outfile, greyOutput)
-
+    labels = _utils.printClassifiedImage(labels, k_clusters, img, outfile, greyOutput)
+    plt.subplot(121)
+    plt.imshow(img)
+    plt.xticks([])
+    plt.yticks([])
+    plt.subplot(122)
+    plt.imshow(labels.reshape(img.shape))
+    plt.xticks([])
+    plt.yticks([])
+    plt.tight_layout()
+    plt.savefig(outfile)
+    plt.close()
 # For running the program on the command line
+# def main2(infile, outfile, k, gk, M, spw=1, gamma=1, sigma=1):
 def main():
 
     # initialize
@@ -282,6 +297,14 @@ def main():
 
     args = parser.parse_args()
     runGabor(args)
-
+    
 if __name__ == "__main__":
-    main()
+    segments = main()
+
+# def mahala(xx, yy):
+#     e = xx-yy
+#     X = np.vstack([xx,yy])
+#     V = np.cov(X.T) 
+#     p = np.linalg.inv(V)
+#     D = np.sqrt(np.sum(np.dot(e,p) * e, axis = 1))
+#     return D
