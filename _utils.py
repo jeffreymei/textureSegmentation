@@ -5,6 +5,9 @@
 # Dr. Howard Cheng
 # ----------------------------------------------------------
 
+import matplotlib, socket
+if socket.gethostname()=='archer':
+    matplotlib.use('agg')
 import math
 import sklearn.cluster as clstr
 import cv2
