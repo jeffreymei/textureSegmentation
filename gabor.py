@@ -8,6 +8,9 @@
 import cv2
 import numpy as np
 import math
+import matplotlib, socket
+if socket.gethostname()=='archer':
+    matplotlib.use('agg')
 import _utils
 import argparse
 import os.path
